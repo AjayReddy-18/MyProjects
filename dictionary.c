@@ -62,7 +62,7 @@ void main()
 
 	if (strstr(wordInfo, "No Definitions Found"))
 	{
-		printf("\nNo Definitions Found for the word %s\n", word);
+		printf("\nNo Definitions Found for the word \"%s\"\n", word);
 	}else
 	{
 		int choice;
