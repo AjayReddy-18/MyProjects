@@ -12,7 +12,6 @@ void main()
 	sprintf(api, "%s%s%s", "curl \"https://api.openweathermap.org/data/2.5/weather?q=", city, "&appid=abe3a0f4d0b6cebfbe7393b4b4e3aa28&units=metric\" > weather.txt");
 	system(api);
 
-
 	FILE *fpWeather = fopen("weather.txt", "r");
 	fseek(fpWeather, 0, SEEK_END);
 	char weatherReport[ftell(fpWeather)];
