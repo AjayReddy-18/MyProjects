@@ -23,7 +23,7 @@ typedef struct LinkedList
 	struct LinkedList *nextNode;
 }Node;
 
-Node *start, *lastNode, *dummy, *temp;
+Node *start, *lastNode;
 
 Node* createNode(Node* newNode)
 {
@@ -123,7 +123,7 @@ char* readId()
 
 Node* getNodeAddress(char *Id)
 {
-	dummy = temp;
+	Node *dummy = (Node*)malloc(sizeof(Node));
 	dummy->nextNode = start;
 
 	while (dummy->nextNode != NULL)
@@ -169,25 +169,26 @@ void update(char *Id)
 
 void delete(char *Id)
 {
+	Node *toBeFreedNode;
 	Node *deleteNode = getNodeAddress(Id);
 
 	if (deleteNode != NULL)
 	{
-		printf("\nItem with ID %s deleted successfully\n", deleteNode->nextNode->item.itemId);
 		if (deleteNode->nextNode == start)
 		{
-			// deleteNode = start;
+			toBeFreedNode = start;
 			start = start->nextNode;
 		}else if (deleteNode->nextNode == lastNode)
 		{
 			lastNode = deleteNode;
-			// deleteNode = deleteNode->nextNode;
+			toBeFreedNode = deleteNode->nextNode;
 			lastNode->nextNode = NULL;
 		}else
 		{
+			toBeFreedNode = deleteNode->nextNode;
 			deleteNode->nextNode = deleteNode->nextNode->nextNode;
 		}
-		saveList();
+		free(toBeFreedNode);
 	}else
 	{
 		printf(NOTFOUND, Id);
@@ -205,30 +206,23 @@ void sort()
 
 	if (choice > 0 && choice < 4)
 	{
-		Node *small = temp, *compare = start;
+		Node *small = start, *compare;
 
-		while (compare != NULL)
+		while (small != NULL)
 		{
-			small->nextNode = start;
-			while (compare->nextNode != NULL)
+			compare = start->nextNode;
+			while (compare != NULL)
 			{
-				if ((choice == 1 || choice == 2) ? ((choice == 1) ? strcmp(small->nextNode->item.itemId, compare->nextNode->item.itemId) > 0 : strcmp(small->nextNode->item.itemDescription, compare->nextNode->item.itemDescription) > 0) : small->nextNode->item.price > compare->nextNode->item.price)
+				if ((choice == 1 || choice == 2) ? ((choice == 1) ? strcmp(small->item.itemId, compare->item.itemId) > 0 : strcmp(small->item.itemDescription, compare->item.itemDescription) > 0) : small->item.price > compare->item.price)
 				{
 					small = compare;
 				}		
 				compare = compare->nextNode;
 			}
-			Item = small->nextNode->item;
+			Item = small->item;
 			showNode();
-			if (small->nextNode == start)
-			{
-				start = start->nextNode;
-			}else
-			{
-				small->nextNode = small->nextNode->nextNode;
-			}
-			compare = start;
-			small = temp;
+			delete(small->item.itemId);
+			small = start;
 		}
 		loadList();
 	}else
@@ -272,6 +266,8 @@ void showMenu()
 					break;
 
 		case 4 :	delete(readId());
+					saveList();
+					printf("\nItem with ID %s deleted successfully\n", ID);
 					break;
 
 		case 5 :	search(readId());
@@ -289,9 +285,6 @@ void showMenu()
 
 void main()
 {
-	dummy = (Node*)malloc(sizeof(Node));
-	temp = dummy;
-
 	loadList();
 
 	while (1)
