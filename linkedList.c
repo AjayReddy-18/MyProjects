@@ -23,7 +23,21 @@ typedef struct LinkedList
 	struct LinkedList *nextNode;
 }Node;
 
-Node *start, *lastNode;
+Node *start;
+
+void loadList();
+Node* createNode(Node*);
+void create();
+void showNode();
+void showList();
+void saveList();
+char* readId();
+Node* getNodeAddress(char*);
+void search();
+void update();
+void delete();
+void sort();
+void showMenu();
 
 Node* createNode(Node* newNode)
 {
@@ -34,11 +48,12 @@ Node* createNode(Node* newNode)
 
 void loadList()
 {
+	Node *lastNode;
 	start = lastNode = NULL;
 	fpDatafile = fopen(DATAFILE, "r");
 
 	while (fread(&Item, sizeof(Item), 1, fpDatafile))
-	{
+    {
 		Node *newNode = createNode(newNode);
 		newNode->item = Item;
 
@@ -50,7 +65,7 @@ void loadList()
 			lastNode->nextNode = newNode;
 		}
 		lastNode = newNode;
-	}
+    }
 }
 
 void showNode()
@@ -92,6 +107,7 @@ void saveList()
 
 void create()
 {
+	Node **lastNode = &start;
 	Node *newNode = createNode(newNode);
 
 	printf("\nEnter item id: ");
@@ -101,14 +117,12 @@ void create()
 	printf("Enter price of %s: ", newNode->item.itemDescription);
 	scanf("%f", &newNode->item.price);
 
-	if (start == NULL)
+	while ((*lastNode) != NULL)
 	{
-		start = newNode;
-	}else
-	{
-		lastNode->nextNode = newNode;
+		lastNode = &(*lastNode)->nextNode;
 	}
-	lastNode = newNode;
+
+	*lastNode = newNode;
 	saveList();
 	printf("\nItem with ID %s added successfully\n", newNode->item.itemId);
 }
@@ -123,16 +137,15 @@ char* readId()
 
 Node* getNodeAddress(char *Id)
 {
-	Node *dummy = (Node*)malloc(sizeof(Node));
-	dummy->nextNode = start;
+	Node *current = start;
 
-	while (dummy->nextNode != NULL)
+	while (current != NULL)
 	{
-		if (!strcmp(dummy->nextNode->item.itemId, Id))
+		if (!strcmp(current->item.itemId, Id))
 		{
-			return dummy;
+			return current;
 		}
-		dummy = dummy->nextNode;
+		current = current->nextNode;
 	}
 	return NULL;
 }
@@ -143,7 +156,7 @@ void search(char *Id)
 
 	if (searchedNode != NULL)
 	{
-		Item = searchedNode->nextNode->item;
+		Item = searchedNode->item;
 		showNode();
 	}else
 	{
@@ -157,41 +170,46 @@ void update(char *Id)
 
 	if (updateNode != NULL)
 	{
-		printf("\nEnter price of %s: ", updateNode->nextNode->item.itemDescription);
-		scanf("%f", &updateNode->nextNode->item.price);
+		printf("\nEnter price of %s: ", updateNode->item.itemDescription);
+		scanf("%f", &updateNode->item.price);
 		saveList();
-		printf("\nItem with ID %s updated successfully\n", updateNode->nextNode->item.itemId);
+		printf("\nItem with ID %s updated successfully\n", updateNode->item.itemId);
 	}else
 	{
 		printf(NOTFOUND, Id);
 	}
 }
 
-void delete(char *Id)
+void delete(Node* deleteNode)
 {
-	Node *toBeFreedNode;
-	Node *deleteNode = getNodeAddress(Id);
+	Node **deleteNodePointer;
+	char confirmation;
 
 	if (deleteNode != NULL)
 	{
-		if (deleteNode->nextNode == start)
+		Item = deleteNode->item;
+		showNode();
+		printf("\nAre you sure do you want to delete Item with ID %s (Press 'Y' to delete / Any key to cancel) ", deleteNode->item.itemId);
+		confirmation = getch();
+
+		if (confirmation == 'Y' || confirmation == 'y')
 		{
-			toBeFreedNode = start;
-			start = start->nextNode;
-		}else if (deleteNode->nextNode == lastNode)
-		{
-			lastNode = deleteNode;
-			toBeFreedNode = deleteNode->nextNode;
-			lastNode->nextNode = NULL;
+			deleteNodePointer = &start;
+
+			while ((*deleteNodePointer) != deleteNode)
+			{
+				deleteNodePointer = &(*deleteNodePointer)->nextNode;
+			}
+
+			*deleteNodePointer = deleteNode->nextNode;
+
+			printf("\nItem with ID %s deleted successfully\n", deleteNode->item.itemId);
+			free(deleteNode);
+			saveList();
 		}else
 		{
-			toBeFreedNode = deleteNode->nextNode;
-			deleteNode->nextNode = deleteNode->nextNode->nextNode;
+			printf("\nDelete operation cancelled.\n");
 		}
-		free(toBeFreedNode);
-	}else
-	{
-		printf(NOTFOUND, Id);
 	}
 }
 
@@ -206,23 +224,25 @@ void sort()
 
 	if (choice > 0 && choice < 4)
 	{
-		Node *small = start, *compare;
+		Node **smallNodePointer = &start;
+		Node **compareNodePointer;
 
-		while (small != NULL)
+		while ((*smallNodePointer) != NULL)
 		{
-			compare = start->nextNode;
-			while (compare != NULL)
+			compareNodePointer = &start->nextNode;
+			while ((*compareNodePointer) != NULL)
 			{
-				if ((choice == 1 || choice == 2) ? ((choice == 1) ? strcmp(small->item.itemId, compare->item.itemId) > 0 : strcmp(small->item.itemDescription, compare->item.itemDescription) > 0) : small->item.price > compare->item.price)
+				if ((choice == 1 || choice == 2) ? ((choice == 1) ? strcmp((*smallNodePointer)->item.itemId, (*compareNodePointer)->item.itemId) > 0 : strcmp((*smallNodePointer)->item.itemDescription, (*compareNodePointer)->item.itemDescription) > 0) : (*smallNodePointer)->item.price > (*compareNodePointer)->item.price)
 				{
-					small = compare;
+					smallNodePointer = compareNodePointer;
 				}		
-				compare = compare->nextNode;
+				compareNodePointer = &(*compareNodePointer)->nextNode;
 			}
-			Item = small->item;
+			Item = (*smallNodePointer)->item;
 			showNode();
-			delete(small->item.itemId);
-			small = start;
+			
+			*smallNodePointer = (*smallNodePointer)->nextNode;
+			smallNodePointer = &start;
 		}
 		loadList();
 	}else
@@ -249,7 +269,7 @@ void showMenu()
 	printf("\nEnter your choice: ");
 	scanf("%d", &choice);
 
-	printf("\n------------------------------------------------------------------------\n");
+	printf("\n-------------------------------------------------------------\n");
 
 	switch (choice)
 	{
@@ -265,9 +285,7 @@ void showMenu()
 		case 3 :	update(readId());
 					break;
 
-		case 4 :	delete(readId());
-					saveList();
-					printf("\nItem with ID %s deleted successfully\n", ID);
+		case 4 :	delete(getNodeAddress(readId()));
 					break;
 
 		case 5 :	search(readId());
